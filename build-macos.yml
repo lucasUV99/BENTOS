@@ -1,0 +1,91 @@
+# ================================================
+#  BENTOS — Build macOS (.app) via GitHub Actions
+# ================================================
+# Se ejecuta manualmente o al crear un Release.
+# Genera BENTOS.app como artefacto descargable.
+
+name: Build macOS
+
+on:
+  # Ejecutar manualmente desde GitHub (Actions → Run workflow)
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Versión a construir (ej: 1.0.3)'
+        required: false
+        default: ''
+  
+  # También al publicar un Release
+  release:
+    types: [published]
+
+jobs:
+  build-macos:
+    runs-on: macos-13
+    
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+      
+      - name: Configurar Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      
+      - name: Instalar Tcl/Tk (requerido para CustomTkinter)
+        run: |
+          brew install tcl-tk
+          echo "TCL_LIBRARY=$(brew --prefix tcl-tk)/lib" >> $GITHUB_ENV
+          echo "TK_LIBRARY=$(brew --prefix tcl-tk)/lib" >> $GITHUB_ENV
+      
+      - name: Crear entorno virtual e instalar dependencias
+        run: |
+          python3 -m venv .venv
+          source .venv/bin/activate
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+          pip install tkcalendar
+          # tkinterdnd2 puede fallar en macOS CI, es opcional
+          pip install tkinterdnd2 || echo "⚠️ tkinterdnd2 no disponible (drag & drop deshabilitado)"
+      
+      - name: Construir BENTOS.app con PyInstaller
+        run: |
+          source .venv/bin/activate
+          pyinstaller bentos_macos.spec --noconfirm
+          
+          # Verificar que se generó
+          if [ -d "dist/BENTOS.app" ]; then
+            echo "✅ BENTOS.app generado exitosamente"
+            du -sh dist/BENTOS.app
+          else
+            echo "❌ Error: No se generó BENTOS.app"
+            exit 1
+          fi
+      
+      - name: Comprimir BENTOS.app en .zip
+        run: |
+          cd dist
+          # Usar ditto para preservar permisos macOS y structure del .app bundle
+          ditto -c -k --sequesterRsrc --keepParent BENTOS.app BENTOS-macOS.zip
+          ls -lh BENTOS-macOS.zip
+          echo "SHA256=$(shasum -a 256 BENTOS-macOS.zip | cut -d' ' -f1)" >> $GITHUB_ENV
+      
+      - name: Mostrar SHA256
+        run: |
+          echo "SHA256: ${{ env.SHA256 }}"
+      
+      - name: Subir artefacto (.zip)
+        uses: actions/upload-artifact@v4
+        with:
+          name: BENTOS-macOS
+          path: dist/BENTOS-macOS.zip
+          retention-days: 30
+      
+      - name: Adjuntar a Release (si aplica)
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/BENTOS-macOS.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
