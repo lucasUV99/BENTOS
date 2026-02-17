@@ -49,6 +49,11 @@ jobs:
           # tkinterdnd2 puede fallar en macOS CI, es opcional
           pip install tkinterdnd2 || echo "⚠️ tkinterdnd2 no disponible (drag & drop deshabilitado)"
       
+      - name: Crear archivo de credenciales dummy (no se sube a GitHub por seguridad)
+        run: |
+          mkdir -p config
+          echo '{"type":"service_account","project_id":"dummy"}' > config/firebase-credentials.json
+      
       - name: Construir BENTOS.app con PyInstaller
         run: |
           source .venv/bin/activate
