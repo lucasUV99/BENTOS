@@ -1,0 +1,34 @@
+# Dependencias para el Sistema de Bitácora Electrónica MSC
+# Pesquera Quintero S.A.
+
+# Parsing de PDF
+pdfplumber>=0.11.0
+PyPDF2>=3.0.1
+
+# Firebase
+firebase-admin>=6.4.0
+
+# Procesamiento de datos
+pandas>=2.2.0
+numpy>=1.26.3
+
+# Conversión de coordenadas y geografía
+pyproj>=3.6.1
+
+# Manejo de fechas
+python-dateutil>=2.8.2
+
+# Validación de datos
+pydantic>=2.5.3
+
+# Utilidades
+python-dotenv>=1.0.0
+packaging>=23.0
+
+# Interfaz Gráfica
+customtkinter>=5.2.1
+Pillow>=10.2.0
+CTkMessagebox>=2.5
+
+# Exportación Excel
+openpyxl>=3.1.5
