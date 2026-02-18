@@ -34,6 +34,12 @@ datas += collect_data_files('CTkMessagebox')
 datas += collect_data_files('tkcalendar')
 datas += collect_data_files('tkinterdnd2')
 
+# Agregar matplotlib con manejo de errores para tests
+try:
+    datas += collect_data_files('matplotlib')
+except Exception as e:
+    print(f"Warning: Could not collect all matplotlib data: {e}")
+
 # Submódulos ocultos que PyInstaller no detecta automáticamente
 hidden_imports = [
     'customtkinter',
@@ -63,6 +69,10 @@ hidden_imports = [
     'dotenv',
     'packaging',
     'packaging.version',
+    'matplotlib',
+    'matplotlib.pyplot',
+    'matplotlib.backends.backend_tkagg',
+    'matplotlib.patches',
 ]
 
 # Agregar submódulos de firebase y google cloud
@@ -71,6 +81,22 @@ hidden_imports += collect_submodules('google.cloud.firestore')
 hidden_imports += collect_submodules('google.cloud.firestore_v1')
 hidden_imports += collect_submodules('google.api_core')
 hidden_imports += collect_submodules('grpc')
+
+# Agregar submódulos de matplotlib con manejo de errores para tests
+try:
+    matplotlib_modules = collect_submodules('matplotlib')
+    # Filtrar módulos de tests que causan problemas
+    matplotlib_modules = [m for m in matplotlib_modules if 'test' not in m.lower()]
+    hidden_imports += matplotlib_modules
+except Exception as e:
+    print(f"Warning: Could not collect all matplotlib modules: {e}")
+    # Agregar manualmente los más importantes
+    hidden_imports += [
+        'matplotlib.backends.backend_tkagg',
+        'matplotlib.backends.backend_agg',
+        'matplotlib.figure',
+        'matplotlib.pyplot',
+    ]
 
 a = Analysis(
     [os.path.join(BASE_DIR, 'app.py')],
@@ -82,13 +108,11 @@ a = Analysis(
     hooksconfig={},
     runtime_hooks=[],
     excludes=[
-        'matplotlib',
         'scipy',
         'IPython',
         'jupyter',
         'notebook',
         'pytest',
-        'unittest',
     ],
     noarchive=False,
     optimize=0,

@@ -32,3 +32,12 @@ CTkMessagebox>=2.5
 
 # Exportación Excel
 openpyxl>=3.1.5
+
+# Gráficos
+matplotlib>=3.8.0
+
+# Calendario
+tkcalendar>=1.6.1
+
+# Drag and Drop
+tkinterdnd2>=0.3.0
