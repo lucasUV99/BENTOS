@@ -1,14 +1,4 @@
 {
-  "viajes_conocidos": [
-    "SERNAPESCA-BE-26585",
-    "SERNAPESCA-BE-26886",
-    "SERNAPESCA-BE-27160",
-    "SERNAPESCA-BE-27023",
-    "SERNAPESCA-BE-27787",
-    "SERNAPESCA-BE-26969",
-    "SERNAPESCA-BE-26601",
-    "SERNAPESCA-BE-27858",
-    "SERNAPESCA-BE-26682"
-  ],
-  "ultima_actualizacion": "2026-02-18T19:26:35.914508"
+  "viajes_conocidos": [],
+  "ultima_actualizacion": "2026-02-18T19:33:52.806762"
 }
