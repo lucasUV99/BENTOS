@@ -122,7 +122,7 @@ exe = EXE(
     console=False,
     disable_windowed_traceback=False,
     argv_emulation=True,  # Necesario en macOS para GUI apps
-    target_arch=None,
+    target_arch='universal2',  # Compatible con Intel y Apple Silicon
     codesign_identity=None,
     entitlements_file=None,
 )
@@ -148,5 +148,6 @@ app = BUNDLE(
         'CFBundleVersion': '1.0.0',
         'CFBundleShortVersionString': '1.0.0',
         'NSHighResolutionCapable': True,
+        'LSMinimumSystemVersion': '11.0',  # macOS Big Sur en adelante
     },
 )
