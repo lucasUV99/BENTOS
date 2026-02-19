@@ -121,8 +121,8 @@ exe = EXE(
     upx=False,  # UPX puede causar problemas en macOS
     console=False,
     disable_windowed_traceback=False,
-    argv_emulation=False,  # True puede causar problemas en macOS moderno
-    target_arch=None,  # ARM64 nativo (Apple Silicon M1/M2/M3/M4)
+    argv_emulation=False,
+    target_arch='x86_64',  # Intel x86_64 — compatible con Macs Intel (i5/i7/i9)
     codesign_identity=None,
     entitlements_file=None,
 )

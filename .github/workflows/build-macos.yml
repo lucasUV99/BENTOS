@@ -21,7 +21,7 @@ on:
 
 jobs:
   build-macos:
-    runs-on: macos-latest
+    runs-on: macos-13  # Intel x86_64 — compatible con Macs Intel (i5/i7/i9)
     
     steps:
       - name: Checkout código
