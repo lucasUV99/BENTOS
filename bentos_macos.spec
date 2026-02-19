@@ -118,11 +118,11 @@ exe = EXE(
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=True,
+    upx=False,  # UPX puede causar problemas en macOS
     console=False,
     disable_windowed_traceback=False,
-    argv_emulation=True,  # Necesario en macOS para GUI apps
-    target_arch='universal2',  # Compatible con Intel y Apple Silicon
+    argv_emulation=False,  # True puede causar problemas en macOS moderno
+    target_arch=None,  # ARM64 nativo (Apple Silicon M1/M2/M3/M4)
     codesign_identity=None,
     entitlements_file=None,
 )
@@ -132,7 +132,7 @@ coll = COLLECT(
     a.binaries,
     a.datas,
     strip=False,
-    upx=True,
+    upx=False,
     upx_exclude=[],
     name='BENTOS',
 )

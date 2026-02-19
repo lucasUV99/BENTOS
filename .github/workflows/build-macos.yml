@@ -27,13 +27,10 @@ jobs:
       - name: Checkout código
         uses: actions/checkout@v4
       
-      - name: Instalar Python universal2 (Intel + Apple Silicon)
-        run: |
-          # Descargar Python universal2 desde python.org (funciona en Intel Y Apple Silicon)
-          curl -L -O https://www.python.org/ftp/python/3.13.2/python-3.13.2-macos11.pkg
-          sudo installer -pkg python-3.13.2-macos11.pkg -target /
-          # Verificar que es universal2
-          file /Library/Frameworks/Python.framework/Versions/3.13/bin/python3.13
+      - name: Configurar Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
       
       - name: Instalar Tcl/Tk (requerido para CustomTkinter)
         run: |
@@ -43,7 +40,7 @@ jobs:
       
       - name: Crear entorno virtual e instalar dependencias
         run: |
-          /Library/Frameworks/Python.framework/Versions/3.13/bin/python3.13 -m venv .venv
+          python3 -m venv .venv
           source .venv/bin/activate
           pip install --upgrade pip
           pip install -r requirements.txt
