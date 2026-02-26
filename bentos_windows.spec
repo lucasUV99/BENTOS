@@ -18,6 +18,9 @@ BASE_DIR = os.path.dirname(os.path.abspath(SPEC))
 datas = [
     # Credenciales de Firebase
     (os.path.join(BASE_DIR, 'config', 'firebase-credentials.json'), 'config'),
+    # Icono de la aplicación
+    (os.path.join(BASE_DIR, 'data', 'icono.ico'), 'data'),
+    (os.path.join(BASE_DIR, 'data', 'icono.png'), 'data'),
     # Backend modules
     (os.path.join(BASE_DIR, 'backend', 'firebase_manager.py'), 'backend'),
     (os.path.join(BASE_DIR, 'backend', 'pdf_parser_v2.py'), 'backend'),
@@ -139,5 +142,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=None,  # Puedes agregar: icon='assets/bentos.ico'
+    icon=os.path.join(BASE_DIR, 'data', 'icono.ico'),
 )

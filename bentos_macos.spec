@@ -35,6 +35,11 @@ datas = [
 datas += collect_data_files('customtkinter')
 datas += collect_data_files('CTkMessagebox')
 datas += collect_data_files('tkcalendar')
+datas += collect_data_files('matplotlib')
+try:
+    datas += collect_data_files('seaborn')
+except Exception:
+    pass
 
 # tkinterdnd2 puede no estar disponible en macOS
 try:
@@ -70,6 +75,12 @@ hidden_imports = [
     'dotenv',
     'packaging',
     'packaging.version',
+    'matplotlib',
+    'matplotlib.pyplot',
+    'matplotlib.backends.backend_tkagg',
+    'seaborn',
+    'unittest',
+    'unittest.mock',
 ]
 
 # tkinterdnd2 opcional en macOS
@@ -95,13 +106,11 @@ a = Analysis(
     hooksconfig={},
     runtime_hooks=[],
     excludes=[
-        'matplotlib',
         'scipy',
         'IPython',
         'jupyter',
         'notebook',
         'pytest',
-        'unittest',
     ],
     noarchive=False,
     optimize=0,

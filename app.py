@@ -37,6 +37,31 @@ else:
 
 sys.path.insert(0, os.path.join(_base_path, 'backend'))
 
+# Ruta del icono de la aplicación
+_ICO_PATH = os.path.join(_base_path, 'data', 'icono.ico')
+_PNG_PATH = os.path.join(_base_path, 'data', 'icono.png')
+_icon_photo_cache = {}  # Cache para evitar que el GC elimine la imagen
+
+def _set_window_icon(win):
+    """Aplica el icono BENTOS a una ventana tkinter/CTk"""
+    def _apply():
+        try:
+            if os.path.exists(_ICO_PATH):
+                win.iconbitmap(_ICO_PATH)
+        except Exception as e:
+            print(f"[icono] Error al aplicar iconbitmap: {e}")
+            try:
+                if os.path.exists(_PNG_PATH):
+                    from PIL import Image, ImageTk
+                    img = Image.open(_PNG_PATH).convert('RGBA').resize((256, 256), Image.LANCZOS)
+                    photo = ImageTk.PhotoImage(img)
+                    win.iconphoto(False, photo)
+                    _icon_photo_cache[id(win)] = photo
+            except Exception as e2:
+                print(f"[icono] Error al aplicar iconphoto: {e2}")
+    # Pequeño delay para asegurar que la ventana esté lista
+    win.after(50, _apply)
+
 from firebase_manager import FirebaseManager
 from pdf_parser_v2 import BitacoraParser
 from updater import UpdateManager, APP_VERSION, aplicar_actualizacion_pendiente
@@ -54,6 +79,7 @@ class SplashScreen:
         self.root = ctk.CTk()
         self.root.title("BENTOS")
         self.parent_callback = parent_callback
+        _set_window_icon(self.root)
         
         # Configurar ventana
         width = 600
@@ -180,6 +206,7 @@ class LoginScreen:
         # Crear ventana
         self.root = ctk.CTk()
         self.root.title("BENTOS - Inicio de Sesión")
+        _set_window_icon(self.root)
         
         # Centrar ventana
         width, height = 480, 560
@@ -459,6 +486,7 @@ class BentosApp:
             self.root = ctk.CTk()
         
         self.root.title("BENTOS - Sistema de Gestión de Bitácoras MSC")
+        _set_window_icon(self.root)
         
         # Configurar ventana maximizada (NO pantalla completa)
         self.root.state('zoomed')
@@ -472,13 +500,6 @@ class BentosApp:
         # Firebase manager
         self.firebase = FirebaseManager()
         
-        # Archivo de estado de la aplicación (para notificaciones perdidas)
-        if getattr(sys, 'frozen', False):
-            _state_dir = os.path.join(os.path.dirname(sys.executable), "config")
-        else:
-            _state_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config")
-        self.APP_STATE_FILE = os.path.join(_state_dir, "app_state.json")
-        
         # Variables
         self.current_section = "subir"  # subir o buscar
         self.loading_animation_running = False
@@ -491,9 +512,6 @@ class BentosApp:
         self._viajes_conocidos = set()  # IDs de viajes ya conocidos (para detectar nuevos)
         self._viajes_inicializados = False  # Flag para saber si ya se cargó el set inicial
         self._notif_timer_id = None  # ID del timer de notificaciones (evitar duplicados)
-        
-        # Cargar estado previo de viajes (para detectar cambios mientras estuvo apagado)
-        self._cargar_estado_app()
         
         # Crear UI
         self.create_ui()
@@ -1371,8 +1389,6 @@ class BentosApp:
                 return
         # Detener ciclos de after pendientes
         self._app_closing = True
-        # Guardar estado actual de viajes conocidos
-        self._guardar_estado_app()
         # Limpiar archivos temporales
         for f in self._temp_files:
             try:
@@ -1381,36 +1397,6 @@ class BentosApp:
             except Exception:
                 pass
         self.root.destroy()
-    
-    def _cargar_estado_app(self):
-        """Carga el estado previo de viajes conocidos desde archivo local"""
-        try:
-            if os.path.exists(self.APP_STATE_FILE):
-                with open(self.APP_STATE_FILE, 'r') as f:
-                    data = json.load(f)
-                    viajes_previos = set(data.get('viajes_conocidos', []))
-                    if viajes_previos:
-                        self._viajes_previos = viajes_previos
-                        self._tiene_estado_previo = True
-                        return
-        except Exception as e:
-            print(f"⚠️ No se pudo cargar estado previo: {e}")
-        
-        self._viajes_previos = set()
-        self._tiene_estado_previo = False
-    
-    def _guardar_estado_app(self):
-        """Guarda el estado actual de viajes conocidos en archivo local"""
-        try:
-            os.makedirs(os.path.dirname(self.APP_STATE_FILE), exist_ok=True)
-            data = {
-                'viajes_conocidos': list(self._viajes_conocidos),
-                'ultima_actualizacion': datetime.now().isoformat()
-            }
-            with open(self.APP_STATE_FILE, 'w') as f:
-                json.dump(data, f, indent=2)
-        except Exception as e:
-            print(f"⚠️ No se pudo guardar estado: {e}")
     
     # ===== TOOLTIPS =====
     
@@ -3871,11 +3857,11 @@ class BentosApp:
             )
             btn_cerrar.pack(side=tk.RIGHT)
             
-        except ImportError as e:
+        except ImportError:
             from CTkMessagebox import CTkMessagebox
             CTkMessagebox(
                 title="Librería no disponible",
-                message=f"No se pudo cargar matplotlib:\n{e}",
+                message="Para generar gráficos necesitas instalar matplotlib:\npip install matplotlib",
                 icon="warning"
             )
         except Exception as e:
@@ -4538,11 +4524,11 @@ class BentosApp:
             )
             btn_cerrar.pack(side=tk.RIGHT)
             
-        except ImportError as e:
+        except ImportError:
             from CTkMessagebox import CTkMessagebox
             CTkMessagebox(
                 title="Librería no disponible",
-                message=f"No se pudo cargar matplotlib:\n{e}",
+                message="Para generar gráficos necesitas instalar matplotlib:\npip install matplotlib",
                 icon="warning"
             )
         except Exception as e:
@@ -5817,17 +5803,16 @@ class BentosApp:
                         
                         comentario = comentarios.get(archivo) if comentarios else None
                         
-                        # Guardar comentario en Firebase para que otros equipos lo vean
+                        if es_reemplazo:
+                            mensaje_notif = f"🔄 Bitácora #{folio} - {nave} (REEMPLAZADA)"
+                        else:
+                            mensaje_notif = f"Bitácora #{folio} - {nave}"
                         if comentario:
-                            try:
-                                self.firebase.db.collection('viajes').document(str(folio)).update({
-                                    'comentario': comentario
-                                })
-                            except Exception as e_com:
-                                print(f"⚠️ No se pudo guardar comentario: {e_com}")
+                            mensaje_notif += f" (Con comentario)"
                         
-                        # NO agregar notificación local — el polling la detectará igual
-                        # (así es consistente con lo que ven los otros equipos)
+                        # Agregar notificación en hilo principal
+                        self.root.after(0, lambda m=mensaje_notif, f=folio, c=comentario: 
+                            self.agregar_notificacion(m, f, c))
                     else:
                         fallidos += 1
                         
@@ -5900,36 +5885,10 @@ class BentosApp:
                 ids_actuales = self.firebase.obtener_ids_viajes()
                 
                 if not self._viajes_inicializados:
-                    # Primera vez: detectar cambios desde la última ejecución
-                    if hasattr(self, '_tiene_estado_previo') and self._tiene_estado_previo:
-                        nuevos = ids_actuales - self._viajes_previos
-                        eliminados = self._viajes_previos - ids_actuales
-                        
-                        # Generar notificaciones de cambios mientras estaba apagado
-                        notifs_previas = []
-                        for id_viaje in nuevos:
-                            info = self.firebase.obtener_info_viaje(id_viaje)
-                            if info:
-                                nave = info.get('nave_nombre', 'N/A')
-                                folio = info.get('id_viaje', id_viaje)
-                                comentario = info.get('comentario', None)
-                                notifs_previas.append((f"📥 Bitácora subida (mientras estabas offline): #{folio} - {nave}", folio, comentario))
-                            else:
-                                notifs_previas.append((f"📥 Bitácora subida (offline): #{id_viaje}", id_viaje, None))
-                        
-                        for id_viaje in eliminados:
-                            notifs_previas.append((f"🗑️ Bitácora eliminada (mientras estabas offline): #{id_viaje}", id_viaje, None))
-                        
-                        # Enviar notificaciones previas al hilo principal
-                        if notifs_previas and not self._app_closing:
-                            self.root.after(0, lambda: self._procesar_notifs_remotas(notifs_previas))
-                    
-                    # Inicializar con estado actual
                     self._viajes_conocidos = ids_actuales
                     self._viajes_inicializados = True
                     return
                 
-                # Detección normal de cambios en tiempo real
                 nuevos = ids_actuales - self._viajes_conocidos
                 eliminados = self._viajes_conocidos - ids_actuales
                 
@@ -5943,13 +5902,12 @@ class BentosApp:
                     if info:
                         nave = info.get('nave_nombre', 'N/A')
                         folio = info.get('id_viaje', id_viaje)
-                        comentario = info.get('comentario', None)
-                        notifs_nuevas.append((f"📥 Nueva bitácora subida: #{folio} - {nave}", folio, comentario))
+                        notifs_nuevas.append((f"📥 Nueva bitácora subida: #{folio} - {nave}", folio))
                     else:
-                        notifs_nuevas.append((f"📥 Nueva bitácora: #{id_viaje}", id_viaje, None))
+                        notifs_nuevas.append((f"📥 Nueva bitácora: #{id_viaje}", id_viaje))
                 
                 for id_viaje in eliminados:
-                    notifs_nuevas.append((f"🗑️ Bitácora eliminada: #{id_viaje}", id_viaje, None))
+                    notifs_nuevas.append((f"🗑️ Bitácora eliminada: #{id_viaje}", id_viaje))
                 
                 self._viajes_conocidos = ids_actuales
                 
@@ -5978,13 +5936,11 @@ class BentosApp:
     
     def _procesar_notifs_remotas(self, notifs_nuevas):
         """Procesa notificaciones descubiertas en el hilo background (llamar desde hilo principal)"""
-        for notif in notifs_nuevas:
-            mensaje, folio = notif[0], notif[1]
-            comentario = notif[2] if len(notif) > 2 else None
+        for mensaje, folio in notifs_nuevas:
             self.notificaciones.append({
                 'mensaje': mensaje,
                 'folio': folio,
-                'comentario': comentario,
+                'comentario': None,
                 'fecha': datetime.now(),
                 'leida': False
             })
